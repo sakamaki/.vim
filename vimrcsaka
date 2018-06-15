@@ -1,0 +1,243 @@
+source $VIMRUNTIME/macros/matchit.vim
+set enc=utf-8
+set fenc=utf-8
+set fencs=utf-8,iso-2022-jp,euc-jp,cp932
+set nohlsearch
+set incsearch
+set number
+set tabstop=4
+set shiftwidth=2
+set showcmd
+set showmatch
+set laststatus=2
+set autowriteall
+filetype on
+"filetype indent on
+filetype plugin on
+syntax on
+"colorscheme darkblue
+"colorscheme twilight
+"colorscheme default
+"colorscheme elflord
+"colorscheme morning
+"colorscheme peachpuff
+"colorscheme slate
+"colorscheme zellner
+"colorscheme blue
+"colorscheme delek
+"colorscheme evening
+"colorscheme murphy
+"colorscheme ron
+"colorscheme torte
+"colorscheme desert
+"colorscheme koehler
+"colorscheme pablo
+"colorscheme shine
+
+"文字コードの自動認識"
+if &encoding !=# 'utf-8'
+  set encoding=japan
+  set fileencoding=japan
+endif
+if has('iconv')
+  let s:enc_euc = 'euc-jp'
+  let s:enc_jis = 'iso-2022-jp'
+  " iconvがeucJP-msに対応しているかをチェック
+  if iconv("\x87\x64\x87\x6a", 'cp932', 'eucjp-ms') ==# "\xad\xc5\xad\xcb"
+    let s:enc_euc = 'eucjp-ms'
+    let s:enc_jis = 'iso-2022-jp-3'
+  " iconvがJISX0213に対応しているかをチェック
+  elseif iconv("\x87\x64\x87\x6a", 'cp932', 'euc-jisx0213') ==# "\xad\xc5\xad\xcb"
+    let s:enc_euc = 'euc-jisx0213'
+    let s:enc_jis = 'iso-2022-jp-3'
+  endif
+  " fileencodingsを構築
+  if &encoding ==# 'utf-8'
+    let s:fileencodings_default = &fileencodings
+    let &fileencodings = s:enc_jis .','. s:enc_euc .',cp932'
+    let &fileencodings = &fileencodings .','. s:fileencodings_default
+    unlet s:fileencodings_default
+  else
+    let &fileencodings = &fileencodings .','. s:enc_jis
+    set fileencodings+=utf-8,ucs-2le,ucs-2
+    if &encoding =~# '^\(euc-jp\|euc-jisx0213\|eucjp-ms\)$'
+      set fileencodings+=cp932
+      set fileencodings-=euc-jp
+      set fileencodings-=euc-jisx0213
+      set fileencodings-=eucjp-ms
+      let &encoding = s:enc_euc
+      let &fileencoding = s:enc_euc
+    else
+      let &fileencodings = &fileencodings .','. s:enc_euc
+    endif
+  endif
+  " 定数を処分
+  unlet s:enc_euc
+  unlet s:enc_jis
+endif
+
+"changelogスタンプフォーマット
+let g:changelog_username = "user_name"
+
+"ステータスライン
+set statusline=%<%f\ %m%r%h%w%{'['.(&fenc!=''?&fenc:&enc).']['.&ff.']'}%=%l,%c%V%8P
+set tags=tags
+
+"自動保存
+function! AutoUp()
+  if expand('%') =~ g:svbfre && !&readonly && &buftype == ''
+    silent update
+  endif
+endfunction
+
+autocmd CursorHold * call AutoUp()
+set updatetime=500
+let g:svbfre = '.\+'
+
+"MRU_Settings
+let MRU_Max_Entries=20
+
+" Lusty Explorer
+nmap <SPACE> :BufferExplorer<CR>
+nmap <unique> <silent> ef :FilesystemExplorer<CR>
+
+" Allargs.vim
+" ex)
+" :Allargs %s/foo/bar/ge|update
+" 使う時。foo を bar に置換しまくる。
+" :Allargs %s/foo/bar/ge|update
+" eオプションをつけないと foo
+"が無いというメッセージがのんびり表示されて、いつま
+" でたっても置換が終わらないので気をつけよう(それに気づかずに密かにハマった)
+" コマンドは | で連続で実行できて、update
+"は変更のあったバッファだけを保存。と。
+" カレントの *.cpp を置換する場合は予め、
+" :ar *.cpp
+" ってやっとくと全部読み込まれる。
+" 確認するには
+" :ar
+function! Allargs(command)
+  let i = 0
+  while i < argc()
+    if filereadable(argv(i))
+      execute "e " . argv(i)
+      execute a:command
+    endif
+    let i = i + 1
+  endwhile
+endfunction
+command! -nargs=+ -complete=command Allargs call Allargs(<q-args>)
+
+"------------------------------------------------------------------------
+" rails
+ au BufNewFile,BufRead *.svg	set ft=xml fenc=utf-8
+ au BufNewFile,BufRead *.rxml	set ft=ruby fenc=utf-8
+
+"rubycomplete.vim
+"autocmd FileType ruby,eruby set omnifunc=rubycomplete#Complete
+autocmd FileType ruby,eruby let g:rubycomplete_buffer_loading = 1
+autocmd FileType ruby,eruby let g:rubycomplete_rails = 1
+autocmd FileType ruby,eruby let g:rubycomplete_classes_in_global = 1
+
+"括弧の自動補完
+"inoremap { {}<LEFT>
+"inoremap [ []<LEFT>
+"inoremap ( ()<LEFT>
+"inoremap " ""<LEFT>
+"inoremap ' ''<LEFT>
+"vnoremap { "zdi{<C-R>z}<ESC>
+"vnoremap [ "zdi[<C-R>z]<ESC>
+"vnoremap ( "zdi(<C-R>z)<ESC>
+"vnoremap " "zdi"<C-R>z"<ESC>
+"vnoremap ' "zdi'<C-R>z'<ESC>
+
+"OpenURL
+command -bar -nargs=1 OpenURL :!open <args>
+"キーマップ設定用
+"nnoremap <silent> <F1>  :help taglist<CR>
+"nnoremap <F2>           :buffers<CR>
+"nnoremap <F3>           :Rgrep -i
+"nnoremap <silent> <F5>  :copen<CR>
+"nnoremap <silent> <F6>  :cclose<CR>
+"nnoremap <F7>           :SFS<CR>
+"nnoremap <F8>           :SR<CR>
+"nnoremap <silent> <F9>  :TlistHighlightTag<CR>
+"nnoremap <silent> <F10> :Tlist<CR>
+"nnoremap <silent> <F11> :TlistClose<CR>
+""#if〜#endifをカット
+"nnoremap <F12>          :set foldmethod=marker<CR>:set foldmarker=#if,#endif<CR>
+
+"貼り付け（ビジュアル矩形はCTRL-Qになる）
+"map <C-V> "+gP
+"cmap <C-V> <C-R>+
+"クリップボードヤンク
+"map <C-C> "+y
+"cmap <C-C> <C-R>+
+"切り取り
+"map <C-X> "+x
+"cmap <C-X> <C-R>+
+
+""カーソル移動
+"map <S-J> 5j
+"cmap <S-J> <C-R>+
+map <S-K> 5k
+cmap <S-K> <C-R>+
+map <S-L> $
+cmap <S-L> <C-R>+
+map <S-H> 0
+cmap <S-H> <C-R>+
+"---------------------------------------------------------------------------
+""windows風のキー操作
+"source C:¥vim7-daily-w32j¥runtime¥mswin.vim
+"
+"---------------------------------------------------------------------------
+" 坂巻）GNUgrep:
+" let Grep_Path = 'c:¥vim7-daily-w32j¥path¥grep.exe'
+" let Grep_Find_Path = 'c:¥vim7-daily-w32j¥path¥find.exe'
+" let Grep_Xargs_Path = 'c:¥vim7-daily-w32j¥path¥xargs.exe'
+" let Grep_Default_Filelist = '*.c *.pc'
+" let Grep_Skip_Files = '*.bak *~ '
+" "pcファイルがgrepされなかった為の対応以下２行（文字コードの問題？）
+" let Grep_Find_Use_Xargs = 0 
+" let Grep_Shell_Quote_Char = '"' 
+"
+"---------------------------------------------------------------------------
+" 坂巻）その他の設定:
+set sw=4
+ab #a /* 99.99A S */<CR>/* 99.99A E */
+ab #m /* 99.99M S */
+ab #d /* 99.99D S */
+ab #y /*****************************************************************************
+ab #u ******************************************************************************/
+ab #i /*  */
+ab #s #if 0
+ab #e #endif
+ab #o /*---------------------------------------------------------------------------*/
+"空白を文字として認識させるらしい
+set isfname+=32
+"アンチエイリアスOFFにしとくと文字が見易い
+set antialias
+
+" タブをスペースに展開しない (expandtab:展開する)
+set expandtab
+
+" MacVim用
+if has('gui_macvim')
+    set lines=50 columns=200
+    set showtabline=2	" タブを常に表示
+    set imdisable	" IMを無効化
+    "set transparency=20	" 透明度を指定
+    set transparency=0" 透明度を指定
+    set antialias
+    set guifont=Monaco:h14
+    "colorscheme evening
+    "colorscheme morning
+    set guioptions-=T
+    set fuoptions=maxvert,maxhorz "フルスクリーンでは幅、高さを最大に
+endif
+
+set nobackup
+setlocal omnifunc=syntaxcomplete#Complete
+
+set list
+set listchars=tab:»-,trail:-,eol:↲,extends:»,precedes:«,nbsp:%
